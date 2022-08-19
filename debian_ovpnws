@@ -143,7 +143,6 @@ client-to-client
 username-as-common-name
 verify-client-cert none
 script-security 3
-duplicate-cn
 client-connect /etc/openvpn/login/connect.sh
 client-disconnect /etc/openvpn/login/disconnect.sh
 ifconfig-pool-persist /etc/openvpn/server/ip_udp.txt
@@ -189,8 +188,6 @@ client-to-client
 username-as-common-name
 verify-client-cert none
 script-security 3
-duplicate-cn
-socket-flags TCP_NODELAY
 client-connect /etc/openvpn/login/connect.sh
 client-disconnect /etc/openvpn/login/disconnect.sh
 ifconfig-pool-persist /etc/openvpn/server/ip_tcp.txt
@@ -527,7 +524,6 @@ server_ip=$(curl -s https://api.ipify.org)
 server_interface=$(ip route get 8.8.8.8 | awk '/dev/ {f=NR} f&&NR-1==f' RS=" ")
 
 install_require
-install_sudo
 install_squid
 install_openvpn
 install_firewall_kvm
