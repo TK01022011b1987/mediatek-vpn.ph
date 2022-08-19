@@ -256,7 +256,6 @@ sudo service squid3 restart
 
 
 
-
 install_openvpn()
 {
 clear
