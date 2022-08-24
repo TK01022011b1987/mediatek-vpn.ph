@@ -4,7 +4,7 @@ HOST='173.225.110.100';
 USER='teamkidl_mediatek';
 PASS='jan022011';
 DBNAME='teamkidl_mediatek';
-PORT_TCP='1194';
+PORT_TCP='110';
 PORT_UDP='53';
 timedatectl set-timezone Asia/Riyadh
 install_require () {
