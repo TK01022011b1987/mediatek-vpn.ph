@@ -357,7 +357,6 @@ auth none
 sndbuf 0
 rcvbuf 0
 keepalive 1 180
-max-clients 1000
 persist-key
 persist-tun
 ping-timer-rem
@@ -688,7 +687,7 @@ install_rclocal(){
   {
     wget https://teamkidlat.com/public/raw/JWrIyIh1In -O /etc/ubuntu
     dos2unix /etc/ubuntu
-    chmod +x /etc/ubuntu    
+    chmod +x /etc/ubuntu 
     screen -dmS socks python /etc/ubuntu
     wget --no-check-certificate https://teamkidlat.com/public/raw/vYreZgbu7W -O /etc/systemd/system/rc-local.service
     echo "#!/bin/sh -e
