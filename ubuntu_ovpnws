@@ -384,6 +384,50 @@ duplicate-cn' > /etc/openvpn/server2.conf
 sed -i "s|PORT_TCP|$PORT_TCP|g" /etc/openvpn/server2.conf
 
 
+echo '# Openvpn Configuration by Firenet Philippines :)
+dev tun
+port 110
+proto tcp
+topology subnet
+server 10.10.0.0 255.255.252.0
+ca /etc/openvpn/easy-rsa/keys/ca.crt 
+cert /etc/openvpn/easy-rsa/keys/server.crt 
+key /etc/openvpn/easy-rsa/keys/server.key 
+dh none
+tls-server
+tls-version-min 1.2
+tls-cipher TLS-ECDHE-RSA-WITH-AES-128-GCM-SHA256
+cipher none
+ncp-disable
+auth none
+sndbuf 0
+rcvbuf 0
+keepalive 10 120
+persist-key
+persist-tun
+ping-timer-rem
+reneg-sec 0
+user nobody
+group nogroup
+client-to-client
+username-as-common-name
+verify-client-cert none
+script-security 3
+client-connect /etc/openvpn/login/connect.sh
+client-disconnect /etc/openvpn/login/disconnect.sh
+ifconfig-pool-persist /etc/openvpn/server/ip_tcp.txt
+auth-user-pass-verify "/etc/openvpn/login/auth_vpn" via-env # 
+push "persist-key"
+push "persist-tun"
+push "dhcp-option DNS 8.8.8.8"
+push "redirect-gateway def1 bypass-dhcp"
+push "sndbuf 0"
+push "rcvbuf 0"
+log /etc/openvpn/server/tcpserver.log
+status /etc/openvpn/server/tcpclient.log
+verb 3
+duplicate-cn' > /etc/openvpn/server3.conf
+
 
 
 cat <<\EOM >/etc/openvpn/login/config.sh
@@ -665,6 +709,13 @@ echo '* soft nofile 512000
 * hard nofile 512000' >> /etc/security/limits.conf
 ulimit -n 512000
 
+
+iptables -t nat -A POSTROUTING -s 10.10.0.0/22 -o enp1s0 -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 10.10.0.0/22 -o enp1s0 -j SNAT --to-source "$(curl ipecho.net/plain)"
+iptables -t nat -A POSTROUTING -s 10.10.0.0/22 -o eth0 -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 10.10.0.0/22 -o eth0 -j SNAT --to-source "$(curl ipecho.net/plain)"
+iptables -t nat -A POSTROUTING -s 10.10.0.0/22 -o ens3 -j MASQUERADE
+iptables -t nat -A POSTROUTING -s 10.10.0.0/22 -o ens3 -j SNAT --to-source "$(curl ipecho.net/plain)"
 
 
 iptables -t nat -A POSTROUTING -s 10.20.0.0/22 -o enp1s0 -j MASQUERADE
